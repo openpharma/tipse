@@ -1,0 +1,16 @@
+#' Patient level data from dummy trial
+#'
+#' Based on re-constructed Kaplan-Meier plot from ExteNET trial (Martin et al., 2017)
+#'
+#' @format
+#' A data frame with 2840 rows and 5 columns:
+#' \describe{
+#'   \item{SUBJID}{Dummy patient ID}
+#'   \item{TRT01P}{Treatment arm (Neratinib or placebo)}
+#'   \item{AVAL}{iDFS time in days}
+#'   \item{EVENT}{Indicator for iDFS event}
+#'   \item{CNSRRS}{Censoring reason (Lost to follow-up or Other)}
+#'   \item{MAXAVAL}{Maximum potential survival time, duration between randomization to data cut-off}
+#' }
+#' @source Martin, M., Holmes, F.A., Ejlertsen, B., Delaloge, S., Moy, B., Iwata, H., von Minckwitz, G., Chia, S.K., Mansi, J., Barrios, C.H. and Gnant, M., 2017. Neratinib after trastuzumab-based adjuvant therapy in HER2-positive breast cancer (ExteNET): 5-year analysis of a randomised, double-blind, placebo-controlled, phase 3 trial. The lancet oncology, 18(12), pp.1688-1700.
+"extenet"

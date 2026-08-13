@@ -1,0 +1,359 @@
+---
+title: "Tipping point analysis examples"
+date: "Last compiled on `r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tipping point analysis examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, message = FALSE,
+  fig.width = 6, fig.height = 4,
+  comment = "#>"
+)
+```
+
+```{r setup, include = FALSE}
+library(tipse)
+library(survival)
+library(dplyr)
+library(ggplot2)
+```
+
+# Introduction
+
+This vignette demonstrates how to use the `tipse` package to perform
+**tipping point analyses** as a sensitivity analysis for time-to-event
+(survival) data. Tipping point analysis is an approach to evaluate how
+sensitive treatment effect estimates are to different censoring
+scenarios. It aims to evaluate the robustness of trial conclusions by
+varying certain data and/or model aspects while imputing missing data.
+This is particularly useful in clinical trials where dropout or loss to
+follow-up may bias efficacy results.
+
+The `tipse` package provides a flexible framework to impute censored
+observations under different approaches and identify the tipping point
+where the upper confidence limit (CL) of the hazard ratio crosses 1. It also offers
+visualizations and plausibility assessment facilitate the interpretation
+of tipping points.
+
+Two approaches are implemented:
+
+1.  **Model-Free Tipping Point Analysis**\
+    Implemented via `tipping_point_model_free` and does not assume a
+    parametric survival model. Uses either resampling of observed event
+    times (`percentile sampling`) or landmark imputation of a fixed
+    number of censored patients (`landmark sampling`).
+
+2.  **Model-Based Tipping Point Analysis**\
+    Implemented via `tipping_point_model_based` and uses parametric
+    survival models (e.g., Weibull) to adjust the imputation of censored
+    observations, allowing hazard inflation or deflation across a range
+    of parameters.
+
+## Example Dataset
+
+we extracted data from the published Kaplan-Meier (KM) curve in de
+Langen et al. [2023] using a KM digitizer. This re-constructed dataset
+contains:
+
+-   `TRT01P`: treatment arm assignment
+-   `AVAL`: observed event time
+-   `EVENT`: event indicator (1=event, 0=censored)
+-   `CNSRRS`: censoring reason
+-   `MAXAVAL`: maximum potential survival time (duration between randomization to data cut-off)
+
+```{r data}
+knitr::kable(codebreak200[1:5, ])
+```
+
+There are 21 (12.1 %) patients in the docetaxel control arm and 6 (3.5
+%) patients in the sotorasib treatment arm who dropped out early on,
+leading to potential information censoring. This raises concerns about
+the validity of trial outcomes and robustness of treatment effects.
+
+```{r data-censor}
+codebreak200 %>% count(TRT01P, CNSRRS)
+```
+
+## Fit Initial Cox Model
+
+We first fit a Cox proportional hazards model, which should have the
+same model specification (including covariates and stratification factors) as the
+original analysis. This model will be used for pooling hazard ratios
+after multiple imputations. In this example, we do not include any covariates besides the treatment arm itself.
+
+```{r cox-fit}
+cox1 <- coxph(Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
+```
+
+# Model-Free Tipping Point Analysis
+
+There are two methods available in `tipping_point_model_free`.
+
+For **`method = "percentile sampling"`**, the key idea is to impute all
+censored observations belonging to the arm specified in `impute` by
+randomly drawing event times from either the best or worst percentiles
+of the observed data, where observations are ranked according to their
+event and censoring times.
+
+For **`method = "landmark sampling"`**, the idea is to modify the
+censored times directly: - when imputing the **control arm**, the
+censoring times of a subset or all relevant censored observations are
+extended to the maximum follow-up time; - when imputing the **treatment
+arm**, the censoring time is instead treated as the event time.
+
+| **Steps**                                        | **percentile Sampling**                                                                                                                                                                                                                                                                                                              | **landmark Sampling**                                                                                                                                                                                                             |
+|----------------|---------------------------|------------------------------|
+| **1. Identify censored patients for imputation** | Select all censored observations in the arm specified by the `impute` argument that correspond to a particular censoring reason (e.g., early dropout). Assume n patients are identified.                                                                                                                                         | Same as left                                                                                                                                                                                                                           |
+| **2. Define tipping parameter range**            | Specifies the percentiles of the observed data from which event times will be sampled to impute censored patients.<br> \* For **treatment arm**, use the worst percentiles (shortest survival times) from the observed data of both arms.<br> \* For **control arm**, use the best percentiles (longest survival times). | \* For **treatment arm**, define the number of patients that will be assumed to have an event at their time of censoring.<br> \* For **control arm**, define the number of patients that will be assumed to be event-free at DCO. |
+| **3. Sampling / Imputation**                     | For each value in `tipping_range` impute patients using event times corresponding up to that percentile.                                                                                                                                                                                                                         | For each value in `tipping_range`, randomly select `x` patients from the `n` censored patients to impute as event-free at DCO.<br>The remaining `n - x` patients are not imputed.                                                      |
+| **4. Multiple imputations**                      | Repeat step 3 `J` times.                                                                                                                                                                                                                                                                                                         | Same as left                                                                                                                                                                                                                           |
+| **5. Model fitting and pooling**                 | For each imputed dataset, fit the Cox proportional hazards model specified via the `cox_fit` argument).<br>Pool the results across the `J` replicates using **Rubin's rules**, producing a combined hazard ratio (HR) and confidence interval for that tipping parameter.                                                        | Same as left                                                                                                                                                                                                                           |
+| **6. Iterate across tipping points**             | Repeat steps 2--5 across all values in the `tipping_range`.<br>This generates a series of pooled HRs and confidence intervals showing how the treatment effect changes as increasingly conservative imputation.                                                                                                                  | Same as left                                                                                                                                                                                                                           |
+| **7. Identify the tipping point**                | **tipping point** is the parameter at which the upper bound first crosses 1, indicating the loss of the apparent treatment benefit.                                                                                                                                                                                              | Same as left                                                                                                                                                                                                                           |
+| **8. Visualize and assess**                      | Plot pooled Kaplan-Meier curves to visually inspect how much shift the imputation created compared to the original data, and how HR changes over different tipping parameters using `plot`.<br>Assess the plausibility of such tipping point occurs using `assess_plausibility`.                                                 | Same as left                                                                                                                                                                                                                           |
+
+### Step-by-step walk through of the analyses using model-free imputation
+
+```{r tipping-point-percentile, cache=TRUE}
+tp_percentile <- tipping_point_model_free(
+  dat = codebreak200,
+  reason = "Early dropout",
+  impute = "docetaxel",
+  J = 100,
+  tipping_range = seq(5, 95, by = 5),
+  cox_fit = cox1,
+  method = "percentile sampling",
+  seed = 12345
+)
+```
+
+```{r tipping-point-landmark, cache=TRUE}
+tp_landmark <- tipping_point_model_free(
+  dat = codebreak200,
+  reason = "Early dropout",
+  impute = "docetaxel",
+  J = 100,
+  tipping_range = 1:20,
+  cox_fit = cox1,
+  method = "landmark sampling",
+  seed = 12345
+)
+```
+
+## Visualize Pooled Kaplan--Meier Curves
+
+```{r plot-percentile-km, cache=TRUE}
+plot(tp_percentile, type = "Kaplan-Meier")
+```
+
+```{r plot-landmark-km, cache=TRUE}
+plot(tp_landmark, type = "Kaplan-Meier")
+```
+
+While there is no objective measure to assess the robustness of the
+result, the average KM curves give a visual representation of how
+optimistic the assumptions of the tipping point approaches are on the
+control arm.
+
+**Interpretation of the curves:**
+
+-   **Red curve**: tipping point parameter where the upper CL of the
+    hazard ratio crosses 1 (i.e., the point at which treatment effect is
+    no longer statistically significant).\
+-   **Orange dashed curve**: original (unimputed) Kaplan--Meier survival
+    for the imputed arm.\
+-   **Gradient blue curves**: pooled Kaplan--Meier estimates across all
+    parameter values.
+
+## Visualize Tipping Point Graph
+
+```{r plot-percentile-tp, cache=TRUE}
+plot(tp_percentile, type = "Tipping Point")
+```
+
+```{r plot-landmark-tp, cache=TRUE}
+plot(tp_landmark, type = "Tipping Point")
+```
+
+## Summarize tipping point via Analysis Results Dataset (ARD)
+
+```{r summary-model-free, cache=TRUE}
+summary(tp_percentile)
+summary(tp_landmark)
+```
+
+The model-free approaches suggest that the results tip if at least `r summary(tp_landmark)$TIPPT` out
+of 21 (`r round(summary(tp_landmark)$TIPPT/21*100,0)` %) of early dropout patients in the control arm are considered
+as event-free at the data cut-off or if we impute all of the early
+dropout in the arm from a sample of `r summary(tp_percentile)$TIPPT` % best event times (both arms
+combined).
+
+## Assess plausibility
+
+```{r assess-model-bree}
+assess_plausibility(tp_percentile)
+assess_plausibility(tp_landmark)
+```
+
+
+# Model-Based Tipping Point Analysis
+
+Model-based tipping point analysis uses parametric survival models to
+generate event times for censored patients. This approach allows
+systematic hazard inflation or deflation, known as the delta-adjustment
+method [Lipkovich et al.
+(2016)](https://onlinelibrary.wiley.com/doi/full/10.1002/pst.1738).
+
+Compared to the steps described in the table above for model-free tipping point analysis, only step 2 and 3 differs:
+
+- **Step 2 Define tipping parameter range**: 
+
+For treatment arm, define the hazard inflation $\delta>1$ for the patients' follow-up time $t>c$ after censoring. For control arm, define the hazard deflation $\delta<1$ for the patients' follow-up time $t>c$ after censoring. 
+$$\hat{h}(t|t > c) = \delta\hat{h}(t)$$
+
+- **Step 3 Sampling / Imputation**: 
+
+*Fitting parametric model*
+
+For a Weilbull model with shape parameter $p$ and scale parameter $\lambda$, the cumulative hazard, survival and cumulative distribution functions are
+$$h(t) = \lambda p (\lambda t)^{(p-1)}, H(t) = (\lambda t)^p, S(t) = \exp(-(\lambda t)^p), F(t)=1-\exp(-(\lambda t)^p)$$
+A Weibull model is fitted to the treatment arm patients to obtain empirical estimates of $p$ and $\lambda$, the goal is to impute event times for a subset of censored patients based on the Weibull model using inverse probability sampling.
+
+*Impute event time under a Weibull model*
+
+Assuming a patient is censored at time $c$ and we wish to impute the event time for this patient. We evaluate the cumulative distribution function at the survival time $F(c)$. Using inverse probability sampling, we generate $u_d$ from a uniform distribution $U(F(c), 1)$ and solve $d$ from the equation
+$$u_d = F(d) = 1-\exp(-(\lambda d)^p)$$
+The solution $d$ is then a imputed event time based on the cumulative distribution function $F(d)$ from a Weibull model. For each imputation, the Weibull model parameters $p$ and $\lambda$ are re-sampled from a multivariate normal distribution with their maximum likelihood estimates and covariate matrix. 
+
+*Impute event time with inflated hazard*
+
+In order to inflate the hazard after time $c$, we assume a two-piece Weibull model where the original hazard is observed until time $c$ as the first piece, and for $t\geq c$ the hazard function $h(t)$ is inflated via $\alpha$ as the second piece to become $h_i(t) = \alpha h(t)$. This inflation is equivalent to inflating on the cumulative hazard scale via
+$$H_i(t) = H(c) + \alpha (H(t) - H(c))$$
+The imputed event time $d$ can be found by solving the cumulative distribution function $F(d) = 1-\exp(-H_i(d))$. 
+
+```{r tipping-point-hazard-deflation, cache=TRUE}
+tp_model_based <- tipping_point_model_based(
+  dat = codebreak200, reason = "Early dropout",
+  impute = "docetaxel",
+  imputation_model = "weibull",
+  J = 100,
+  tipping_range = seq(0.1, 1, by = 0.1),
+  cox_fit = cox1,
+  seed = 12345
+)
+```
+
+## Visualize Pooled Kaplan--Meier Curves
+
+```{r plot-model-based-KM, cache=TRUE}
+plot(tp_model_based, type = "Kaplan-Meier")
+```
+
+## Visualize Tipping Point Graph
+
+```{r plot-model-based-hazard-inflation, cache=TRUE}
+plot(tp_model_based, type = "Tipping Point") + scale_x_reverse()
+```
+
+The model-based approach tips the results with a hazard deflation of at
+least `r summary(tp_model_based)$TIPPT`% for imputing event times for early dropout patients in the
+control arm.
+
+## Summary via Analysis Results Dataset (ARD)
+
+```{r summary-model-based, cache=TRUE}
+summary(tp_model_based)
+```
+
+## Assess plausibility
+
+```{r assess-model-based, cache=TRUE}
+assess_plausibility(tp_model_based)
+```
+
+To assess the clinical plausibility on the tipping point from
+model-based approach using the trial data, `r summary(tp_model_based)$TIPPT`% hazard deflation
+translates to a HR of `r 1-summary(tp_model_based)$TIPPT/100` between early dropouts in control arm and
+control arm patients who did not drop out. This translated to HR = `r 1-summary(tp_model_based)$TIPPT/100`
+/ `r round(summary(cox1)$coefficients[, "exp(coef)"],2)` = `r round((1-summary(tp_model_based)$TIPPT/100)/summary(cox1)$coefficients[, "exp(coef)"], 2)` between the early dropout patients in the control arm and
+Sotorasib arm, which seems unlikely given the limited treatment options
+these patients have.
+
+# Jump-to-Reference (J2R) as a Special Case of Model-based Imputation
+
+The Jump-to-Reference (J2R) method assumes that, upon censoring, subjects in the treatment arm behave as if they had switched to the reference (usually control) arm. In a time-to-event framework, this corresponds to replacing the post-censoring hazard for treatment-arm dropouts with the hazard estimated from the reference arm.
+
+Importantly, J2R is a **special case of hazard inflation**, where the inflation factor is chosen to exactly match the reference arm hazard. Assuming a Cox model, the hazard inflation needed to convert treatment-arm hazard into reference-arm hazard is:
+
+\[
+\text{hazard inflation} = \frac{1}{\widehat{HR}}
+\]
+
+Thus, J2R can be implemented in the tipping-point framework by setting the tipping-range to \(1/HR\), meaning the hazard is inflated until treatment arm dropouts “jump” to the reference hazard.
+
+Below we illustrate this using a Weibull imputation model and the treatment-arm dropout reason “Lost to follow-up”.
+
+## Inspect the data
+
+```{r}
+knitr::kable(extenet[seq(1, 2000, by = 400), ])
+```
+
+## Fit the original Cox model
+
+```{r}
+cox2 <- coxph(Surv(AVAL, EVENT) ~ TRT01P, data = extenet)
+summary_cox2 <- summary(cox2)
+
+## Extract HR for treatment vs reference
+orig_HR <- summary_cox2$coefficients[, "exp(coef)"]
+orig_HR
+```
+
+J2R implemented as hazard inflation = 1 / HR
+
+```{r}
+j2r_inflation <- 1 / orig_HR
+j2r_inflation
+```
+
+## Run model-based imputation
+
+We see the parameter `tipping_range` to the J2R inflation to produce the J2R scenario,
+
+```{r, cache = TRUE}
+j2r <- tipping_point_model_based(
+  dat = extenet,
+  reason = "Lost to follow-up",
+  impute = "neratinib", # treatment arm with dropouts
+  imputation_model = "weibull",
+  J = 100,
+  tipping_range = j2r_inflation, # J2R through hazard inflation
+  cox_fit = cox2,
+  seed = 12345
+)
+```
+
+## J2R Results
+
+The output below shows the HR estimated in the J2R scenario. The hazard ratio changed from `r round(orig_HR, 3)` in the original analysis to `r round(j2r$imputation_results$HR, 3)` in the jump-to-reference imputation.
+
+
+```{r}
+j2r$imputation_results
+```
+
+
+# References
+-   I. Lipkovich, B. Ratitch, and M. O'Kelly. Sensitivity to
+    censored-at-random assumption in the analysis of time- to-event
+    endpoints. Pharmaceutical Statistics, 15(3):216--229, 2016.
+    <https://doi.org/10.1002/pst.1738>.

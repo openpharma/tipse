@@ -1,0 +1,44 @@
+Package: tipse
+Title: Tipping Point Analysis for Survival Endpoints
+Version: 2.0
+Authors@R: 
+      c(person(given = "Ajmal", 
+           family = "Oodally", 
+           email = "ajmal.oodally@novartis.com", 
+           role = c("cre", "aut"),
+           comment = c(ORCID = "0000-0001-8143-5011")
+           ),
+    person(given = "Craig", 
+           family = "Wang", 
+           email = "craig.wang@novartis.com", 
+           role = c("aut"), 
+           comment = c(ORCID = "0000-0003-1804-2463")
+           ),
+    person(given = "Zheng", 
+           family = "Li", 
+           email = "zheng.li@novartis.com", 
+           role = c("ctb"),
+           comment = c(ORCID = "0000-0002-7655-0290")
+           ))
+Description: Implements tipping point sensitivity analysis for time-to-event endpoints under different missing data scenarios, as described in Oodally et al. (2025) <doi:10.48550/arXiv.2506.19988>. Supports both model-based and model-free imputation, multiple imputation workflows, plausibility assessment and visualizations. Enables robust assessment for regulatory and exploratory analyses.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 3.5)
+LazyData: true
+Imports: 
+    MASS,
+    ggplot2,
+    survival,
+    dplyr,
+    stats,
+    utils,
+    knitr,
+    purrr,
+    rmarkdown
+VignetteBuilder: knitr
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
