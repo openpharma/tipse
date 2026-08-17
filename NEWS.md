@@ -1,3 +1,9 @@
+# tipse 2.1
+- Updated maintainer email address due to job change
+- Added url to githib repository
+- Updated reference of associated manuscript to include most recent version
+
+
 # tipse 2.0
 
 This update contains code breaking changes, specifically:
