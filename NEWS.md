@@ -3,7 +3,6 @@
 - Added url to github repository
 - Updated reference of associated manuscript to include most recent version
 
-
 # tipse 2.0
 
 This update contains code breaking changes, specifically:
