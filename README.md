@@ -8,6 +8,6 @@ The R package **tipse** implements tipping point sensitivity analysis for time-t
 
 ## References
 
-* Oodally, A., Wang, C., Li, Z. and Chakravartty, A., 2025. Tipping Point Sensitivity Analysis for Missing Data in Time-to-Event Endpoints: Model-Based and Model-Free Approaches. arXiv preprint arXiv:2506.19988.
+* Oodally, A., Wang, C., Li, Z. and Chakravartty, A., 2025. Tipping Point Sensitivity Analysis for Missing Data in Time-to-Event Endpoints: Model-Based and Ad hoc Approaches. arXiv preprint arXiv:2506.19988v3.
 
 

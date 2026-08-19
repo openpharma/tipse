@@ -1,10 +1,10 @@
 Package: tipse
 Title: Tipping Point Analysis for Survival Endpoints
-Version: 2.0
+Version: 2.1
 Authors@R: 
       c(person(given = "Ajmal", 
            family = "Oodally", 
-           email = "ajmal.oodally@novartis.com", 
+           email = "ajmaloodally@hotmail.com", 
            role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-8143-5011")
            ),
@@ -25,6 +25,7 @@ License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+URL: https://github.com/openpharma/tipse
 Depends: 
     R (>= 3.5)
 LazyData: true
