@@ -1,6 +1,6 @@
 # tipse 2.1
 - Updated maintainer email address due to job change
-- Added url to githib repository
+- Added url to github repository
 - Updated reference of associated manuscript to include most recent version
 
 
