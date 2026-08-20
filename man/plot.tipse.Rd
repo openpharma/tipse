@@ -31,7 +31,7 @@ although there is no objective measure to assess the robustness of the result.
 }
 \examples{
 \donttest{
-cox1 <- survival::coxph(Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
+cox1 <- survival::coxph(survival::Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
 result <- tipping_point_model_based(
   dat = codebreak200,
   reason = "Early dropout",

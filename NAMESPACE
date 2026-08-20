@@ -15,14 +15,20 @@ import(knitr)
 import(rmarkdown)
 importFrom(MASS,mvrnorm)
 importFrom(purrr,map_dfr)
-importFrom(stats,median)
-importFrom(stats,qnorm)
-importFrom(stats,qt)
-importFrom(stats,runif)
-importFrom(stats,var)
-importFrom(survival,Surv)
-importFrom(survival,coxph)
-importFrom(survival,survfit)
-importFrom(survival,survreg)
-importFrom(utils,head)
-importFrom(utils,tail)
+importFrom(stats,
+  median,
+  qnorm,
+  qt,
+  runif,
+  var
+)
+importFrom(survival,
+  Surv,
+  coxph,
+  survfit,
+  survreg
+)
+importFrom(utils,
+  head,
+  tail
+)

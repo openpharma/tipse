@@ -8,11 +8,19 @@
 \description{
 Implements tipping point sensitivity analysis for time-to-event endpoints under different missing data scenarios, as described in Oodally et al. (2025) \doi{10.48550/arXiv.2506.19988}. Supports both model-based and model-free imputation, multiple imputation workflows, plausibility assessment and visualizations. Enables robust assessment for regulatory and exploratory analyses.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/openpharma/tipse}
+}
+
+}
 \author{
-\strong{Maintainer}: Ajmal Oodally \email{ajmal.oodally@novartis.com} (\href{https://orcid.org/0000-0001-8143-5011}{ORCID})
+\strong{Maintainer}: Ajmal Oodally \email{ajmaloodally@hotmail.com} (\href{https://orcid.org/0000-0001-8143-5011}{ORCID})
 
 Authors:
 \itemize{
+  \item Ajmal Oodally \email{ajmaloodally@hotmail.com} (\href{https://orcid.org/0000-0001-8143-5011}{ORCID})
   \item Craig Wang \email{craig.wang@novartis.com} (\href{https://orcid.org/0000-0003-1804-2463}{ORCID})
 }
 

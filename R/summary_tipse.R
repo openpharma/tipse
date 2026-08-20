@@ -23,7 +23,7 @@
 #' @examples
 #' \donttest{
 #' # Hazard deflation in the control arm
-#' cox1 <- survival::coxph(Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
+#' cox1 <- survival::coxph(survival::Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
 #' result1 <- tipping_point_model_based(
 #'   dat = codebreak200,
 #'   reason = "Early dropout",

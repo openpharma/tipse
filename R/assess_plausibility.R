@@ -2,7 +2,7 @@
 #'
 #' This function facilitates the evaluation of clinical plausibility at the tipping point. It provides a text summary comparing event rates,
 #' follow-up duration, or hazard ratios between treatment arms depending on the
-#' imputation method and arm specified. NOTE: this function only supports imputation in one arm. 
+#' imputation method and arm specified. NOTE: this function only supports imputation in one arm.
 #'
 #' @param tipse A `tipse` object returned by one of \link{tipping_point_model_free} or \link{tipping_point_model_based}.
 #' @param verbose Logical. If `TRUE`, prints assessment details.
@@ -16,7 +16,7 @@
 #' @export
 #'
 #' @examples
-#' cox1 <- survival::coxph(Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
+#' cox1 <- survival::coxph(survival::Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
 #' result <- tipping_point_model_free(
 #'   dat = codebreak200,
 #'   reason = "Early dropout",

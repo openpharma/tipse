@@ -27,7 +27,7 @@
 #' @export
 #'
 #' @examples
-#' cox_fit <- survival::coxph(Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
+#' cox_fit <- survival::coxph(survival::Surv(AVAL, EVENT) ~ TRT01P, data = codebreak200)
 #' imputed_list <- impute_percentile(
 #'   dat        = codebreak200,
 #'   reason     = "Early dropout",
